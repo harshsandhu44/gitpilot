@@ -8,10 +8,6 @@ repository = "https://github.com/harshsandhu44/gitpilot"
 homepage = "https://github.com/harshsandhu44/gitpilot"
 
 [[bin]]
-name = "gitpilot"
-path = "src/main.rs"
-
-[[bin]]
 name = "git-pilot"
 path = "src/main.rs"
 
