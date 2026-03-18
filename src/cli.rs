@@ -47,6 +47,9 @@ pub enum Commands {
         /// Base branch to sync against
         #[arg(long, short)]
         base: Option<String>,
+        /// Preview what would be synced without making changes
+        #[arg(long)]
+        dry_run: bool,
     },
     /// Browse commit history with filters
     Log {
@@ -152,13 +155,19 @@ mod tests {
     #[test]
     fn parse_sync_default() {
         let cli = Cli::try_parse_from(["git-pilot", "sync"]).unwrap();
-        assert!(matches!(cli.command, Commands::Sync { base: None }));
+        assert!(matches!(cli.command, Commands::Sync { base: None, dry_run: false }));
     }
 
     #[test]
     fn parse_sync_with_base() {
         let cli = Cli::try_parse_from(["git-pilot", "sync", "--base", "main"]).unwrap();
-        assert!(matches!(cli.command, Commands::Sync { base: Some(ref b) } if b == "main"));
+        assert!(matches!(cli.command, Commands::Sync { base: Some(ref b), .. } if b == "main"));
+    }
+
+    #[test]
+    fn parse_sync_dry_run() {
+        let cli = Cli::try_parse_from(["git-pilot", "sync", "--dry-run"]).unwrap();
+        assert!(matches!(cli.command, Commands::Sync { dry_run: true, .. }));
     }
 
     #[test]
