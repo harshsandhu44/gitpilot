@@ -113,10 +113,10 @@ fn run_command(cli: &Cli, config: Config) -> Result<()> {
             let ctx = CommandContext { repo, config, json: cli.json, no_color: cli.no_color };
             commands::switch::run(&ctx, *remote)?;
         }
-        Commands::Sync { base } => {
+        Commands::Sync { base, dry_run } => {
             let repo = RepoContext::open()?;
             let ctx = CommandContext { repo, config, json: cli.json, no_color: cli.no_color };
-            commands::sync::run(&ctx, base.as_deref())?;
+            commands::sync::run(&ctx, base.as_deref(), *dry_run)?;
         }
         Commands::Log { author, since, grep, count } => {
             let repo = RepoContext::open()?;

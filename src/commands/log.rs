@@ -30,7 +30,7 @@ pub fn run(
         grep,
     };
 
-    let commits = filtered(&ctx.repo, count, &filter)?;
+    let commits = filtered(&ctx.repo, count, ctx.config.log_limit, &filter)?;
 
     if commits.is_empty() {
         if !ctx.json {
@@ -174,5 +174,8 @@ fn parse_since(s: &str) -> Result<DateTime<Utc>> {
     // YYYY-MM-DD
     let naive = NaiveDate::parse_from_str(s, "%Y-%m-%d")
         .map_err(|_| anyhow::anyhow!("Invalid date format: '{}'. Use YYYY-MM-DD, Nd, Nw, or Nm", s))?;
-    Ok(naive.and_hms_opt(0, 0, 0).unwrap().and_utc())
+    Ok(naive
+        .and_hms_opt(0, 0, 0)
+        .ok_or_else(|| anyhow::anyhow!("Invalid time components for date '{}'", s))?
+        .and_utc())
 }

@@ -32,7 +32,7 @@ pub fn run(ctx: &CommandContext) -> Result<i32> {
     let mut has_error = false;
 
     // Large diff warning
-    if total_lines > 500 {
+    if total_lines > ctx.config.review_diff_threshold {
         findings.push(FindingRow {
             severity: theme::warning("warning"),
             category: "Large diff".to_string(),
@@ -46,7 +46,11 @@ pub fn run(ctx: &CommandContext) -> Result<i32> {
         .config
         .review_secrets_patterns
         .iter()
-        .filter_map(|p| Regex::new(p).ok())
+        .filter_map(|p| {
+            Regex::new(p)
+                .map_err(|e| eprintln!("{}", theme::warning(&format!("Invalid review pattern '{}': {}", p, e))))
+                .ok()
+        })
         .collect();
 
     let debug_patterns: Vec<(&str, Regex)> = vec![
@@ -222,9 +226,14 @@ mod tests {
 }
 
 fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
+    if s.chars().count() <= max {
         s.to_string()
     } else {
-        format!("{}…", &s[..max.saturating_sub(1)])
+        let end = s
+            .char_indices()
+            .nth(max.saturating_sub(1))
+            .map(|(i, _)| i)
+            .unwrap_or(s.len());
+        format!("{}…", &s[..end])
     }
 }
