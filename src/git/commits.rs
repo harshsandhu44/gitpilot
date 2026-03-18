@@ -8,7 +8,7 @@ pub struct LogFilter<'a> {
     pub grep: Option<&'a str>,
 }
 
-pub fn filtered(ctx: &RepoContext, count: usize, filter: &LogFilter) -> Result<Vec<CommitSummary>, GitPilotError> {
+pub fn filtered(ctx: &RepoContext, count: usize, scan_limit: usize, filter: &LogFilter) -> Result<Vec<CommitSummary>, GitPilotError> {
     let repo = &ctx.repo;
     let mut revwalk = repo.revwalk()?;
     revwalk.push_head()?;
@@ -17,7 +17,7 @@ pub fn filtered(ctx: &RepoContext, count: usize, filter: &LogFilter) -> Result<V
     let mut results = Vec::new();
     let mut checked = 0usize;
     for oid in revwalk {
-        if checked >= 10_000 || results.len() >= count {
+        if checked >= scan_limit || results.len() >= count {
             break;
         }
         checked += 1;
@@ -143,12 +143,12 @@ mod tests {
         commit_file(&repo, dir.path(), "b.txt", "b", "from bob");
         let ctx = make_repo_context(repo, dir.path());
         let filter = LogFilter { author: Some("Test User"), since: None, grep: None };
-        let commits = filtered(&ctx, 10, &filter).unwrap();
+        let commits = filtered(&ctx, 10, 10_000, &filter).unwrap();
         assert_eq!(commits.len(), 2);
 
         // Filter by non-existent author
         let filter2 = LogFilter { author: Some("nobody"), since: None, grep: None };
-        let commits2 = filtered(&ctx, 10, &filter2).unwrap();
+        let commits2 = filtered(&ctx, 10, 10_000, &filter2).unwrap();
         assert_eq!(commits2.len(), 0);
     }
 
@@ -161,7 +161,7 @@ mod tests {
         let ctx = make_repo_context(repo, dir.path());
 
         let filter = LogFilter { author: None, since: None, grep: Some("widget") };
-        let commits = filtered(&ctx, 10, &filter).unwrap();
+        let commits = filtered(&ctx, 10, 10_000, &filter).unwrap();
         assert_eq!(commits.len(), 2);
     }
 
@@ -174,13 +174,13 @@ mod tests {
         // Since one year in the future — should return nothing
         let future = Utc::now() + Duration::days(365);
         let filter = LogFilter { author: None, since: Some(future), grep: None };
-        let commits = filtered(&ctx, 10, &filter).unwrap();
+        let commits = filtered(&ctx, 10, 10_000, &filter).unwrap();
         assert_eq!(commits.len(), 0);
 
         // Since one year ago — should return the commit
         let past = Utc::now() - Duration::days(365);
         let filter2 = LogFilter { author: None, since: Some(past), grep: None };
-        let commits2 = filtered(&ctx, 10, &filter2).unwrap();
+        let commits2 = filtered(&ctx, 10, 10_000, &filter2).unwrap();
         assert_eq!(commits2.len(), 1);
     }
 

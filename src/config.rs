@@ -17,6 +17,7 @@ pub struct Config {
     pub stale_days: u64,
     pub review_secrets_patterns: Vec<String>,
     pub sync_strategy: SyncStrategy,
+    pub log_limit: usize,
 }
 
 impl Default for Config {
@@ -37,6 +38,7 @@ impl Default for Config {
                 r"password\s*=".to_string(),
             ],
             sync_strategy: SyncStrategy::default(),
+            log_limit: 10_000,
         }
     }
 }
@@ -48,6 +50,7 @@ struct FileConfig {
     stale_days: Option<u64>,
     review_secrets_patterns: Option<Vec<String>>,
     sync_strategy: Option<SyncStrategy>,
+    log_limit: Option<usize>,
 }
 
 fn global_config_path() -> Option<PathBuf> {
@@ -74,6 +77,9 @@ fn apply(base: &mut Config, file: FileConfig) {
     }
     if let Some(v) = file.sync_strategy {
         base.sync_strategy = v;
+    }
+    if let Some(v) = file.log_limit {
+        base.log_limit = v;
     }
 }
 
@@ -128,6 +134,7 @@ mod tests {
             stale_days: None,
             review_secrets_patterns: None,
             sync_strategy: None,
+            log_limit: None,
         });
         assert_eq!(c.base_branch, "develop");
     }
@@ -141,6 +148,7 @@ mod tests {
             stale_days: Some(60),
             review_secrets_patterns: None,
             sync_strategy: None,
+            log_limit: None,
         });
         assert_eq!(c.stale_days, 60);
     }
@@ -154,6 +162,7 @@ mod tests {
             stale_days: None,
             review_secrets_patterns: None,
             sync_strategy: None,
+            log_limit: None,
         });
         assert_eq!(c.protected_branches, vec!["trunk"]);
     }
@@ -169,6 +178,7 @@ mod tests {
             stale_days: None,
             review_secrets_patterns: None,
             sync_strategy: None,
+            log_limit: None,
         });
         assert_eq!(c.base_branch, original_base);
         assert_eq!(c.stale_days, original_stale);

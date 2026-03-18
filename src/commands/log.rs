@@ -30,7 +30,7 @@ pub fn run(
         grep,
     };
 
-    let commits = filtered(&ctx.repo, count, &filter)?;
+    let commits = filtered(&ctx.repo, count, ctx.config.log_limit, &filter)?;
 
     if commits.is_empty() {
         if !ctx.json {
