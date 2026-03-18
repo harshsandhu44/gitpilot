@@ -88,6 +88,132 @@ fn load_file(path: &PathBuf) -> Result<Option<FileConfig>> {
     Ok(Some(file_config))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn default_base_branch_is_main() {
+        assert_eq!(Config::default().base_branch, "main");
+    }
+
+    #[test]
+    fn default_protected_branches() {
+        let c = Config::default();
+        assert!(c.protected_branches.contains(&"main".to_string()));
+        assert!(c.protected_branches.contains(&"master".to_string()));
+        assert!(c.protected_branches.contains(&"develop".to_string()));
+    }
+
+    #[test]
+    fn default_stale_days_is_30() {
+        assert_eq!(Config::default().stale_days, 30);
+    }
+
+    #[test]
+    fn default_review_patterns_include_known_secrets() {
+        let c = Config::default();
+        assert!(c.review_secrets_patterns.iter().any(|p| p.contains("AWS_SECRET")));
+        assert!(c.review_secrets_patterns.iter().any(|p| p.contains("password")));
+        assert!(c.review_secrets_patterns.iter().any(|p| p.contains("ghp_")));
+    }
+
+    #[test]
+    fn apply_overrides_base_branch() {
+        let mut c = Config::default();
+        apply(&mut c, FileConfig {
+            base_branch: Some("develop".to_string()),
+            protected_branches: None,
+            stale_days: None,
+            review_secrets_patterns: None,
+            sync_strategy: None,
+        });
+        assert_eq!(c.base_branch, "develop");
+    }
+
+    #[test]
+    fn apply_overrides_stale_days() {
+        let mut c = Config::default();
+        apply(&mut c, FileConfig {
+            base_branch: None,
+            protected_branches: None,
+            stale_days: Some(60),
+            review_secrets_patterns: None,
+            sync_strategy: None,
+        });
+        assert_eq!(c.stale_days, 60);
+    }
+
+    #[test]
+    fn apply_overrides_protected_branches() {
+        let mut c = Config::default();
+        apply(&mut c, FileConfig {
+            base_branch: None,
+            protected_branches: Some(vec!["trunk".to_string()]),
+            stale_days: None,
+            review_secrets_patterns: None,
+            sync_strategy: None,
+        });
+        assert_eq!(c.protected_branches, vec!["trunk"]);
+    }
+
+    #[test]
+    fn apply_none_fields_leave_defaults_unchanged() {
+        let mut c = Config::default();
+        let original_stale = c.stale_days;
+        let original_base = c.base_branch.clone();
+        apply(&mut c, FileConfig {
+            base_branch: None,
+            protected_branches: None,
+            stale_days: None,
+            review_secrets_patterns: None,
+            sync_strategy: None,
+        });
+        assert_eq!(c.base_branch, original_base);
+        assert_eq!(c.stale_days, original_stale);
+    }
+
+    #[test]
+    fn load_file_returns_none_for_missing_path() {
+        let path = std::path::PathBuf::from("/tmp/gitpilot_nonexistent_test_config_xyz.toml");
+        let result = load_file(&path).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn load_file_parses_base_branch() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        writeln!(f, r#"base_branch = "develop""#).unwrap();
+        let result = load_file(&f.path().to_path_buf()).unwrap().unwrap();
+        assert_eq!(result.base_branch, Some("develop".to_string()));
+    }
+
+    #[test]
+    fn load_file_parses_stale_days() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        writeln!(f, "stale_days = 90").unwrap();
+        let result = load_file(&f.path().to_path_buf()).unwrap().unwrap();
+        assert_eq!(result.stale_days, Some(90));
+    }
+
+    #[test]
+    fn load_file_errors_on_invalid_toml() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        writeln!(f, "not = valid = toml!!!").unwrap();
+        let result = load_file(&f.path().to_path_buf());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn load_file_parses_sync_strategy_merge() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        writeln!(f, r#"sync_strategy = "merge""#).unwrap();
+        let result = load_file(&f.path().to_path_buf()).unwrap().unwrap();
+        assert!(matches!(result.sync_strategy, Some(SyncStrategy::Merge)));
+    }
+}
+
 impl Config {
     pub fn load() -> Result<Self> {
         let mut config = Config::default();

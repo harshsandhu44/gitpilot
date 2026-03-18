@@ -85,6 +85,75 @@ pub fn run(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_since_days() {
+        let before = Utc::now();
+        let result = parse_since("7d").unwrap();
+        let expected = before - Duration::days(7);
+        assert!((result - expected).num_seconds().abs() < 2);
+    }
+
+    #[test]
+    fn parse_since_one_day() {
+        let before = Utc::now();
+        let result = parse_since("1d").unwrap();
+        let expected = before - Duration::days(1);
+        assert!((result - expected).num_seconds().abs() < 2);
+    }
+
+    #[test]
+    fn parse_since_weeks() {
+        let before = Utc::now();
+        let result = parse_since("2w").unwrap();
+        let expected = before - Duration::weeks(2);
+        assert!((result - expected).num_seconds().abs() < 2);
+    }
+
+    #[test]
+    fn parse_since_months() {
+        let before = Utc::now();
+        let result = parse_since("3m").unwrap();
+        let expected = before - Duration::days(90);
+        assert!((result - expected).num_seconds().abs() < 2);
+    }
+
+    #[test]
+    fn parse_since_date() {
+        let result = parse_since("2026-01-15").unwrap();
+        assert_eq!(result.format("%Y-%m-%d").to_string(), "2026-01-15");
+    }
+
+    #[test]
+    fn parse_since_date_at_midnight() {
+        let result = parse_since("2025-06-01").unwrap();
+        assert_eq!(result.format("%H:%M:%S").to_string(), "00:00:00");
+    }
+
+    #[test]
+    fn parse_since_invalid_string() {
+        assert!(parse_since("abc").is_err());
+    }
+
+    #[test]
+    fn parse_since_unknown_unit() {
+        assert!(parse_since("7x").is_err());
+    }
+
+    #[test]
+    fn parse_since_empty_string() {
+        assert!(parse_since("").is_err());
+    }
+
+    #[test]
+    fn parse_since_bad_date_format() {
+        assert!(parse_since("15-01-2026").is_err());
+    }
+}
+
 fn parse_since(s: &str) -> Result<DateTime<Utc>> {
     // Shorthand: Nd (days), Nw (weeks), Nm (months)
     if let Some(rest) = s.strip_suffix('d') {

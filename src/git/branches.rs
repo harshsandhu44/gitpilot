@@ -75,6 +75,82 @@ pub fn list_branches(ctx: &RepoContext, base_branch: &str, stale_days: u64) -> R
     Ok(result)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::test_helpers::{commit_file, make_repo, make_repo_context};
+
+    #[test]
+    fn branch_state_equality() {
+        assert_eq!(BranchState::Merged, BranchState::Merged);
+        assert_eq!(BranchState::Gone, BranchState::Gone);
+        assert_eq!(BranchState::Stale, BranchState::Stale);
+        assert_eq!(BranchState::Active, BranchState::Active);
+        assert_ne!(BranchState::Merged, BranchState::Active);
+    }
+
+    #[test]
+    fn list_branches_returns_default_branch() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let branches = list_branches(&ctx, "main", 30).unwrap();
+        assert_eq!(branches.len(), 1);
+    }
+
+    #[test]
+    fn list_branches_active_state_for_recent_commit() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let branches = list_branches(&ctx, "main", 30).unwrap();
+        assert_eq!(branches[0].state, BranchState::Active);
+        assert_eq!(branches[0].age_days, 0);
+    }
+
+    #[test]
+    fn list_branches_multiple_branches() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        // Create additional branch
+        {
+            let head = repo.head().unwrap().peel_to_commit().unwrap();
+            repo.branch("feature/x", &head, false).unwrap();
+        }
+        let ctx = make_repo_context(repo, dir.path());
+        let branches = list_branches(&ctx, "main", 30).unwrap();
+        assert_eq!(branches.len(), 2);
+        let names: Vec<&str> = branches.iter().map(|b| b.name.as_str()).collect();
+        assert!(names.iter().any(|n| n.contains("feature/x")));
+    }
+
+    #[test]
+    fn list_branches_records_last_commit_message() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "my special message");
+        let ctx = make_repo_context(repo, dir.path());
+        let branches = list_branches(&ctx, "main", 30).unwrap();
+        assert_eq!(branches[0].last_commit_msg, "my special message");
+    }
+
+    #[test]
+    fn is_merged_detects_ancestor() {
+        let (dir, repo) = make_repo();
+        let base_oid = commit_file(&repo, dir.path(), "a.txt", "a", "base");
+        // base is an ancestor of itself — merged
+        assert!(is_merged(&repo, base_oid, base_oid));
+    }
+
+    #[test]
+    fn is_merged_false_for_diverged_branches() {
+        let (dir, repo) = make_repo();
+        let first_oid = commit_file(&repo, dir.path(), "a.txt", "a", "first");
+        let second_oid = commit_file(&repo, dir.path(), "b.txt", "b", "second");
+        // second is NOT an ancestor of first (it's a descendant)
+        assert!(!is_merged(&repo, second_oid, first_oid));
+    }
+}
+
 fn is_gone(branch: &git2::Branch, repo: &git2::Repository) -> bool {
     if let Ok(upstream) = branch.upstream() {
         let upstream_ref = upstream.get().name().unwrap_or("").to_string();

@@ -132,6 +132,95 @@ pub fn run(ctx: &CommandContext) -> Result<i32> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn truncate_short_unchanged() {
+        assert_eq!(truncate("short", 20), "short");
+    }
+
+    #[test]
+    fn truncate_at_limit_unchanged() {
+        assert_eq!(truncate("hello", 5), "hello");
+    }
+
+    #[test]
+    fn truncate_over_limit_adds_ellipsis() {
+        let s = "a".repeat(70);
+        let result = truncate(&s, 60);
+        assert!(result.ends_with('…'));
+        assert!(result.chars().count() <= 60);
+    }
+
+    #[test]
+    fn truncate_zero_returns_ellipsis() {
+        assert_eq!(truncate("anything", 0), "…");
+    }
+
+    #[test]
+    fn secret_pattern_aws_matches() {
+        let pat = Regex::new(r"AWS_SECRET").unwrap();
+        assert!(pat.is_match("AWS_SECRET_KEY=abc123"));
+        assert!(!pat.is_match("aws_key=foo"));
+    }
+
+    #[test]
+    fn secret_pattern_github_token_matches() {
+        let pat = Regex::new(r"ghp_[A-Za-z0-9]+").unwrap();
+        assert!(pat.is_match("token = ghp_abcABC123"));
+        assert!(!pat.is_match("token = ghs_abc"));
+    }
+
+    #[test]
+    fn secret_pattern_password_matches() {
+        let pat = Regex::new(r"password\s*=").unwrap();
+        assert!(pat.is_match("password = secret"));
+        assert!(pat.is_match("password=secret"));
+        assert!(!pat.is_match("user_password_hash"));
+    }
+
+    #[test]
+    fn debug_pattern_println_matches() {
+        let pat = Regex::new(r"println!\s*\(").unwrap();
+        assert!(pat.is_match("println!(\"debug\")"));
+        assert!(pat.is_match("println! (\"debug\")"));
+        // eprintln! contains println! as a substring — the real command strips leading '+' from
+        // diff lines and then scans the content, so this is expected to flag eprintln! too.
+        assert!(pat.is_match("eprintln!(\"ok\")"));
+        assert!(!pat.is_match("log::info!(\"ok\")"));
+    }
+
+    #[test]
+    fn debug_pattern_console_log_matches() {
+        let pat = Regex::new(r"console\.log\s*\(").unwrap();
+        assert!(pat.is_match("console.log(\"debug\")"));
+        assert!(!pat.is_match("console.warn(\"ok\")"));
+    }
+
+    #[test]
+    fn todo_pattern_matches_word_boundary() {
+        let pat = Regex::new(r"\bTODO\b").unwrap();
+        assert!(pat.is_match("// TODO: fix this"));
+        assert!(!pat.is_match("TODOLIST"));
+    }
+
+    #[test]
+    fn fixme_pattern_matches() {
+        let pat = Regex::new(r"\bFIXME\b").unwrap();
+        assert!(pat.is_match("// FIXME: broken"));
+    }
+
+    #[test]
+    fn hack_pattern_matches() {
+        let pat = Regex::new(r"\bHACK\b").unwrap();
+        assert!(pat.is_match("// HACK: workaround"));
+        assert!(!pat.is_match("shackle"));
+    }
+}
+
 fn truncate(s: &str, max: usize) -> String {
     if s.len() <= max {
         s.to_string()

@@ -72,6 +72,77 @@ pub fn branch_table<B: std::ops::Deref<Target = BranchInfo>>(branches: &[B]) -> 
     Table::new(rows).to_string()
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncate_short_string_unchanged() {
+        assert_eq!(truncate("hello", 10), "hello");
+    }
+
+    #[test]
+    fn truncate_exact_length_unchanged() {
+        assert_eq!(truncate("hello", 5), "hello");
+    }
+
+    #[test]
+    fn truncate_long_string_adds_ellipsis() {
+        let result = truncate("hello world", 8);
+        assert!(result.ends_with('…'));
+        assert!(result.chars().count() <= 8);
+    }
+
+    #[test]
+    fn truncate_zero_max_returns_ellipsis() {
+        let result = truncate("hello", 0);
+        assert_eq!(result, "…");
+    }
+
+    #[test]
+    fn truncate_max_one_returns_ellipsis() {
+        let result = truncate("hello", 1);
+        assert_eq!(result, "…");
+    }
+
+    #[test]
+    fn file_table_contains_file_path_and_status() {
+        let changes = vec![
+            FileChange { path: "src/main.rs".to_string(), status: "modified".to_string() },
+            FileChange { path: "README.md".to_string(), status: "added".to_string() },
+        ];
+        let table = file_table(&changes);
+        assert!(table.contains("src/main.rs"));
+        assert!(table.contains("modified"));
+        assert!(table.contains("README.md"));
+        assert!(table.contains("added"));
+    }
+
+    #[test]
+    fn file_table_empty_input_has_headers() {
+        let table = file_table(&[]);
+        assert!(table.contains("Status"));
+        assert!(table.contains("File"));
+    }
+
+    #[test]
+    fn commit_table_contains_commit_data() {
+        use crate::git::commits::CommitSummary;
+        use chrono::Utc;
+        let commits = vec![CommitSummary {
+            short_id: "abc1234".to_string(),
+            full_id: git2::Oid::zero(),
+            message: "feat: add tests".to_string(),
+            author: "Alice".to_string(),
+            date: Utc::now(),
+        }];
+        let table = commit_table(&commits);
+        assert!(table.contains("abc1234"));
+        assert!(table.contains("Alice"));
+        assert!(table.contains("feat: add tests"));
+    }
+}
+
 fn truncate(s: &str, max: usize) -> String {
     if s.len() <= max {
         s.to_string()

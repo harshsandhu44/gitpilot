@@ -1,11 +1,11 @@
-# gitpilot
+# git-pilot
 
 A Rust CLI that handles the tedious parts of daily Git workflow: quick repo inspection, PR summaries, pre-commit risk detection, branch cleanup, and more.
 
 ## Install
 
 ```bash
-cargo install gitpilot
+cargo install git-pilot
 ```
 
 Or build from source:
@@ -14,7 +14,7 @@ Or build from source:
 cargo install --path .
 ```
 
-Once installed, you can also invoke gitpilot as a Git subcommand:
+Once installed, use it as a Git subcommand:
 
 ```bash
 git pilot status
@@ -35,7 +35,7 @@ git pilot summary
 Shows the full state of your working tree at a glance.
 
 ```
-gitpilot status
+git pilot status
 ```
 
 - Current branch and upstream ahead/behind count
@@ -48,8 +48,8 @@ gitpilot status
 Summarizes what changed on the current branch relative to a base branch — useful when writing PR descriptions.
 
 ```
-gitpilot summary
-gitpilot summary --base develop
+git pilot summary
+git pilot summary --base develop
 ```
 
 - Total additions and deletions per file
@@ -60,7 +60,7 @@ gitpilot summary --base develop
 Scans staged changes for common issues before you commit. Exits with code `1` if any errors are found, making it suitable as a pre-commit hook.
 
 ```
-gitpilot review
+git pilot review
 ```
 
 Detects:
@@ -76,9 +76,9 @@ Detects:
 Lists branches that are merged, gone (remote deleted), or stale (no commits in 30+ days), then lets you interactively pick which ones to delete.
 
 ```
-gitpilot cleanup
-gitpilot cleanup --base develop
-gitpilot cleanup --dry-run
+git pilot cleanup
+git pilot cleanup --base develop
+git pilot cleanup --dry-run
 ```
 
 - `--dry-run` — preview what would be deleted without deleting anything
@@ -89,8 +89,8 @@ gitpilot cleanup --dry-run
 Fuzzy, interactive branch switcher. Checks out the selected branch; creates a local tracking branch if `--remote` is used and the branch only exists on origin.
 
 ```
-gitpilot switch
-gitpilot switch --remote
+git pilot switch
+git pilot switch --remote
 ```
 
 ### `sync`
@@ -98,8 +98,8 @@ gitpilot switch --remote
 Fetches origin and rebases (or merges) the current branch onto the base branch.
 
 ```
-gitpilot sync
-gitpilot sync --base develop
+git pilot sync
+git pilot sync --base develop
 ```
 
 The strategy is controlled by `sync_strategy` in your config (default: `rebase`).
@@ -109,11 +109,11 @@ The strategy is controlled by `sync_strategy` in your config (default: `rebase`)
 Compact commit history with relative timestamps, author, and ref decorations.
 
 ```
-gitpilot log
-gitpilot log --count 50
-gitpilot log --author alice
-gitpilot log --since 7d
-gitpilot log --grep feat
+git pilot log
+git pilot log --count 50
+git pilot log --author alice
+git pilot log --since 7d
+git pilot log --grep feat
 ```
 
 `--since` accepts `YYYY-MM-DD`, `Nd` (days), `Nw` (weeks), or `Nm` (months).
@@ -123,8 +123,8 @@ gitpilot log --grep feat
 Interactively undo the last N commits with a choice of soft, mixed, or hard reset. Shows the affected commits before confirming a hard reset.
 
 ```
-gitpilot undo
-gitpilot undo --count 10
+git pilot undo
+git pilot undo --count 10
 ```
 
 ### `stash`
@@ -132,16 +132,16 @@ gitpilot undo --count 10
 Interactive stash manager: lists stashes, then lets you apply, pop, or drop the selected entry.
 
 ```
-gitpilot stash
+git pilot stash
 ```
 
 ### `init`
 
-Scaffolds a `.gitpilot.toml` in the current repo with commented-out defaults. Pass `--hook` to also install `gitpilot review` as a pre-commit hook.
+Scaffolds a `.gitpilot.toml` in the current repo with commented-out defaults. Pass `--hook` to also install `git pilot review` as a pre-commit hook.
 
 ```
-gitpilot init
-gitpilot init --hook
+git pilot init
+git pilot init --hook
 ```
 
 ### `generate`
@@ -149,31 +149,31 @@ gitpilot init --hook
 Generate shell completion scripts or a man page.
 
 ```
-gitpilot generate completions bash
-gitpilot generate completions zsh
-gitpilot generate completions fish
-gitpilot generate man
-gitpilot generate man --output gitpilot.1
+git pilot generate completions bash
+git pilot generate completions zsh
+git pilot generate completions fish
+git pilot generate man
+git pilot generate man --output git-pilot.1
 ```
 
 Shorthand for completions:
 
 ```
-gitpilot completions zsh
+git pilot completions zsh
 ```
 
 **Use as a pre-commit hook (manual):**
 
 ```bash
-echo 'gitpilot review' >> .git/hooks/pre-commit
+echo 'git pilot review' >> .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-Or use `gitpilot init --hook` to do this automatically.
+Or use `git pilot init --hook` to do this automatically.
 
 ## Configuration
 
-Config is loaded from `~/.config/gitpilot/config.toml` (global) and `.gitpilot.toml` in the repo root (local), with local values taking precedence. Run `gitpilot init` to scaffold a local config.
+Config is loaded from `~/.config/gitpilot/config.toml` (global) and `.gitpilot.toml` in the repo root (local), with local values taking precedence. Run `git pilot init` to scaffold a local config.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
@@ -185,7 +185,7 @@ Config is loaded from `~/.config/gitpilot/config.toml` (global) and `.gitpilot.t
 
 ## Update checker
 
-On startup, gitpilot checks crates.io for a newer version and prints a notice if one is available. Set `GITPILOT_NO_UPDATE_CHECK=1` to disable.
+On startup, git-pilot checks crates.io for a newer version and prints a notice if one is available. Set `GITPILOT_NO_UPDATE_CHECK=1` to disable.
 
 ## License
 

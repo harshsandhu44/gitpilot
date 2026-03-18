@@ -28,6 +28,110 @@ const TOML_TEMPLATE: &str = r#"# gitpilot configuration
 # sync_strategy = "rebase"
 "#;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static DIR_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    #[test]
+    fn toml_template_contains_base_branch() {
+        assert!(TOML_TEMPLATE.contains("base_branch"));
+    }
+
+    #[test]
+    fn toml_template_contains_protected_branches() {
+        assert!(TOML_TEMPLATE.contains("protected_branches"));
+    }
+
+    #[test]
+    fn toml_template_contains_stale_days() {
+        assert!(TOML_TEMPLATE.contains("stale_days"));
+    }
+
+    #[test]
+    fn toml_template_contains_sync_strategy() {
+        assert!(TOML_TEMPLATE.contains("sync_strategy"));
+    }
+
+    #[test]
+    fn toml_template_contains_review_secrets_patterns() {
+        assert!(TOML_TEMPLATE.contains("review_secrets_patterns"));
+    }
+
+    #[test]
+    fn install_hook_creates_new_file_with_git_pilot_review() {
+        let _guard = DIR_MUTEX.lock().unwrap();
+        let dir = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".git").join("hooks")).unwrap();
+        let original = std::env::current_dir().unwrap();
+        std::env::set_current_dir(dir.path()).unwrap();
+
+        let result = install_pre_commit_hook();
+        std::env::set_current_dir(&original).unwrap();
+
+        result.unwrap();
+        let hook = std::fs::read_to_string(dir.path().join(".git/hooks/pre-commit")).unwrap();
+        assert!(hook.contains("git pilot review"));
+        assert!(hook.starts_with("#!/bin/sh"));
+    }
+
+    #[test]
+    fn install_hook_appends_to_existing_file() {
+        let _guard = DIR_MUTEX.lock().unwrap();
+        let dir = tempfile::TempDir::new().unwrap();
+        let hooks_dir = dir.path().join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).unwrap();
+        let hook_path = hooks_dir.join("pre-commit");
+        std::fs::write(&hook_path, "#!/bin/sh\necho 'existing hook'\n").unwrap();
+
+        let original = std::env::current_dir().unwrap();
+        std::env::set_current_dir(dir.path()).unwrap();
+
+        let result = install_pre_commit_hook();
+        std::env::set_current_dir(&original).unwrap();
+
+        result.unwrap();
+        let hook = std::fs::read_to_string(&hook_path).unwrap();
+        assert!(hook.contains("existing hook"));
+        assert!(hook.contains("git pilot review"));
+    }
+
+    #[test]
+    fn install_hook_skips_if_already_present() {
+        let _guard = DIR_MUTEX.lock().unwrap();
+        let dir = tempfile::TempDir::new().unwrap();
+        let hooks_dir = dir.path().join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).unwrap();
+        let hook_path = hooks_dir.join("pre-commit");
+        std::fs::write(&hook_path, "#!/bin/sh\ngit pilot review\n").unwrap();
+
+        let original = std::env::current_dir().unwrap();
+        std::env::set_current_dir(dir.path()).unwrap();
+
+        let result = install_pre_commit_hook();
+        std::env::set_current_dir(&original).unwrap();
+
+        result.unwrap();
+        // Content should not have been duplicated
+        let hook = std::fs::read_to_string(&hook_path).unwrap();
+        assert_eq!(hook.matches("git pilot review").count(), 1);
+    }
+
+    #[test]
+    fn install_hook_fails_without_git_dir() {
+        let _guard = DIR_MUTEX.lock().unwrap();
+        let dir = tempfile::TempDir::new().unwrap();
+        let original = std::env::current_dir().unwrap();
+        std::env::set_current_dir(dir.path()).unwrap();
+
+        let result = install_pre_commit_hook();
+        std::env::set_current_dir(&original).unwrap();
+
+        assert!(result.is_err());
+    }
+}
+
 pub fn run(_config: &Config, install_hook: bool) -> Result<()> {
     let path = std::env::current_dir()?.join(".gitpilot.toml");
 
@@ -59,12 +163,12 @@ fn install_pre_commit_hook() -> Result<()> {
     }
 
     let hook_path = hook_dir.join("pre-commit");
-    let hook_line = "gitpilot review\n";
+    let hook_line = "git pilot review\n";
 
     if hook_path.exists() {
         let existing = std::fs::read_to_string(&hook_path)?;
-        if existing.contains("gitpilot review") {
-            println!("{}", theme::dim("pre-commit hook already contains gitpilot review — skipping."));
+        if existing.contains("git pilot review") {
+            println!("{}", theme::dim("pre-commit hook already contains git pilot review — skipping."));
             return Ok(());
         }
         let mut content = existing;
