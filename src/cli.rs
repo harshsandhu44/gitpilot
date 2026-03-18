@@ -3,7 +3,7 @@ use clap_complete::Shell;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "gitpilot", about = "A Git assistant for daily developer workflow", version)]
+#[command(name = "git-pilot", about = "A Git assistant for daily developer workflow", version)]
 pub struct Cli {
     #[arg(long, global = true, help = "Output results as JSON")]
     pub json: bool,
