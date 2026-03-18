@@ -1,6 +1,6 @@
 [package]
 name = "gitpilot"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 description = "A Git assistant for daily developer workflow"
 license = "MIT"

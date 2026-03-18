@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/harshsandhu44/gitpilot/compare/v0.3.0...v0.4.0) (2026-03-18)
+
+
+### Features
+
+* add toml config and shell completions ([#1](https://github.com/harshsandhu44/gitpilot/issues/1)) ([d5dd8e1](https://github.com/harshsandhu44/gitpilot/commit/d5dd8e1117f09722426948e1e459c7ed3118da99))
+
 # [0.3.0](https://github.com/harshsandhu44/gitpilot/compare/v0.2.0...v0.3.0) (2026-03-18)
 
 
