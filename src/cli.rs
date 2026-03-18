@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(name = "gitpilot", about = "A Git assistant for daily developer workflow", version)]
@@ -24,5 +25,10 @@ pub enum Commands {
         /// Base branch to check merges against
         #[arg(long, short)]
         base: Option<String>,
+    },
+    /// Generate shell completion scripts
+    Completions {
+        #[arg(value_enum)]
+        shell: Shell,
     },
 }

@@ -1,4 +1,5 @@
 pub mod cleanup;
+pub mod completions;
 pub mod review;
 pub mod status;
 pub mod summary;

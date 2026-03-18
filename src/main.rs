@@ -14,6 +14,11 @@ use git::RepoContext;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    if let Commands::Completions { shell } = &cli.command {
+        return commands::completions::run(*shell);
+    }
+
     let config = Config::load()?;
 
     match &cli.command {
@@ -40,6 +45,7 @@ fn main() -> Result<()> {
             let ctx = CommandContext { repo, config };
             commands::cleanup::run(&ctx, base.as_deref())?;
         }
+        Commands::Completions { .. } => unreachable!(),
     }
 
     Ok(())
