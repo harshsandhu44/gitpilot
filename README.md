@@ -5,6 +5,12 @@ A Rust CLI that handles the tedious parts of daily Git workflow: quick repo insp
 ## Install
 
 ```bash
+cargo install gitpilot
+```
+
+Or build from source:
+
+```bash
 cargo install --path .
 ```
 
@@ -76,3 +82,7 @@ Protected branches (`main`, `master`, `develop`) and the current branch are alwa
 | Base branch | `main` |
 | Protected branches | `main`, `master`, `develop` |
 | Stale threshold | 30 days |
+
+## License
+
+MIT
