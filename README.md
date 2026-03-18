@@ -5,7 +5,7 @@ A Rust CLI that handles the tedious parts of daily Git workflow: quick repo insp
 ## Install
 
 ```bash
-cargo install git-pilot
+cargo install gitpilot
 ```
 
 Or build from source:
