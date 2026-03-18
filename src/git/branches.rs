@@ -15,6 +15,7 @@ pub enum BranchState {
 pub struct BranchInfo {
     pub name: String,
     pub state: BranchState,
+    #[allow(dead_code)]
     pub last_commit_date: DateTime<Utc>,
     pub last_commit_msg: String,
     pub age_days: i64,

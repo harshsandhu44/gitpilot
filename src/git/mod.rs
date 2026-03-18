@@ -8,6 +8,7 @@ use crate::error::GitPilotError;
 
 pub struct RepoContext {
     pub repo: git2::Repository,
+    #[allow(dead_code)]
     pub workdir: PathBuf,
 }
 
