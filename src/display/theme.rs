@@ -1,6 +1,95 @@
 use chrono::{DateTime, Utc};
 use owo_colors::OwoColorize;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Duration;
+
+    #[test]
+    fn relative_time_just_now() {
+        let t = Utc::now() - Duration::seconds(30);
+        assert_eq!(relative_time(t), "just now");
+    }
+
+    #[test]
+    fn relative_time_one_minute() {
+        let t = Utc::now() - Duration::seconds(90);
+        assert_eq!(relative_time(t), "1 minute ago");
+    }
+
+    #[test]
+    fn relative_time_plural_minutes() {
+        let t = Utc::now() - Duration::minutes(5);
+        assert_eq!(relative_time(t), "5 minutes ago");
+    }
+
+    #[test]
+    fn relative_time_one_hour() {
+        let t = Utc::now() - Duration::minutes(65);
+        assert_eq!(relative_time(t), "1 hour ago");
+    }
+
+    #[test]
+    fn relative_time_plural_hours() {
+        let t = Utc::now() - Duration::hours(3);
+        assert_eq!(relative_time(t), "3 hours ago");
+    }
+
+    #[test]
+    fn relative_time_one_day() {
+        let t = Utc::now() - Duration::hours(25);
+        assert_eq!(relative_time(t), "1 day ago");
+    }
+
+    #[test]
+    fn relative_time_plural_days() {
+        let t = Utc::now() - Duration::days(3);
+        assert_eq!(relative_time(t), "3 days ago");
+    }
+
+    #[test]
+    fn relative_time_one_week() {
+        let t = Utc::now() - Duration::days(10);
+        assert_eq!(relative_time(t), "1 week ago");
+    }
+
+    #[test]
+    fn relative_time_plural_weeks() {
+        let t = Utc::now() - Duration::days(21);
+        assert_eq!(relative_time(t), "3 weeks ago");
+    }
+
+    #[test]
+    fn relative_time_months() {
+        let t = Utc::now() - Duration::days(60);
+        assert_eq!(relative_time(t), "2 months ago");
+    }
+
+    #[test]
+    fn relative_time_one_year() {
+        let t = Utc::now() - Duration::days(400);
+        assert_eq!(relative_time(t), "1 year ago");
+    }
+
+    #[test]
+    fn relative_time_plural_years() {
+        let t = Utc::now() - Duration::days(800);
+        assert_eq!(relative_time(t), "2 years ago");
+    }
+
+    #[test]
+    fn color_fns_contain_input_text() {
+        owo_colors::set_override(false);
+        assert!(success("ok").contains("ok"));
+        assert!(error("bad").contains("bad"));
+        assert!(warning("warn").contains("warn"));
+        assert!(heading("head").contains("head"));
+        assert!(dim("quiet").contains("quiet"));
+        assert!(info("note").contains("note"));
+    }
+}
+
 pub fn heading(s: &str) -> String {
     format!("{}", s.bold())
 }

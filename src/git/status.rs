@@ -100,6 +100,95 @@ pub fn get_repo_status(ctx: &RepoContext) -> Result<RepoStatus, GitPilotError> {
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::test_helpers::{commit_file, make_repo, make_repo_context};
+
+    #[test]
+    fn get_repo_status_returns_branch_name() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        // After first commit on init, branch is typically "master" or "main"
+        assert!(!status.branch.is_empty());
+        assert!(status.branch == "master" || status.branch == "main");
+    }
+
+    #[test]
+    fn get_repo_status_clean_repo_has_no_changes() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert!(status.staged.is_empty());
+        assert!(status.unstaged.is_empty());
+        assert!(status.untracked.is_empty());
+    }
+
+    #[test]
+    fn get_repo_status_detects_untracked_file() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        // Write a file without staging it
+        std::fs::write(dir.path().join("new.txt"), "hello").unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert!(status.untracked.iter().any(|f| f.path == "new.txt"));
+    }
+
+    #[test]
+    fn get_repo_status_detects_staged_new_file() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        // Stage a new file without committing
+        let new_path = dir.path().join("staged.txt");
+        std::fs::write(&new_path, "staged content").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("staged.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert!(status.staged.iter().any(|f| f.path == "staged.txt"));
+        assert!(status.staged.iter().any(|f| f.status == "added"));
+    }
+
+    #[test]
+    fn get_repo_status_detects_staged_modified_file() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "original", "initial");
+        // Modify and stage
+        std::fs::write(dir.path().join("a.txt"), "modified").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("a.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert!(status.staged.iter().any(|f| f.path == "a.txt" && f.status == "modified"));
+    }
+
+    #[test]
+    fn get_repo_status_detects_unstaged_modification() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "original", "initial");
+        // Modify without staging
+        std::fs::write(dir.path().join("a.txt"), "changed but not staged").unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert!(status.unstaged.iter().any(|f| f.path == "a.txt"));
+    }
+
+    #[test]
+    fn get_repo_status_no_stash_by_default() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "a", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let status = get_repo_status(&ctx).unwrap();
+        assert_eq!(status.stash_count, 0);
+    }
+}
+
 fn get_upstream_status(repo: &git2::Repository, branch: &str) -> Option<UpstreamStatus> {
     let local_branch = repo.find_branch(branch, git2::BranchType::Local).ok()?;
     let upstream = local_branch.upstream().ok()?;

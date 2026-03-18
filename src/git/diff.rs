@@ -112,6 +112,81 @@ fn process_diff(diff: git2::Diff) -> Result<DiffSummary, GitPilotError> {
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::test_helpers::{commit_file, make_repo, make_repo_context};
+
+    #[test]
+    fn staged_diff_empty_when_nothing_staged() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "hello", "initial");
+        let ctx = make_repo_context(repo, dir.path());
+        let diff = staged_diff(&ctx).unwrap();
+        assert!(diff.files.is_empty());
+        assert_eq!(diff.total_additions, 0);
+        assert_eq!(diff.total_deletions, 0);
+    }
+
+    #[test]
+    fn staged_diff_shows_added_lines() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "line1\n", "initial");
+        // Stage a new file
+        std::fs::write(dir.path().join("b.txt"), "alpha\nbeta\n").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("b.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let diff = staged_diff(&ctx).unwrap();
+        assert!(diff.files.iter().any(|f| f.path == "b.txt"));
+        assert!(diff.total_additions >= 2);
+    }
+
+    #[test]
+    fn staged_diff_shows_modified_lines() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "original\n", "initial");
+        std::fs::write(dir.path().join("a.txt"), "changed\n").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("a.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let diff = staged_diff(&ctx).unwrap();
+        assert_eq!(diff.total_additions, 1);
+        assert_eq!(diff.total_deletions, 1);
+    }
+
+    #[test]
+    fn staged_diff_patch_contains_added_lines() {
+        let (dir, repo) = make_repo();
+        commit_file(&repo, dir.path(), "a.txt", "old\n", "initial");
+        std::fs::write(dir.path().join("a.txt"), "new\n").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("a.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let diff = staged_diff(&ctx).unwrap();
+        let file = diff.files.iter().find(|f| f.path == "a.txt").unwrap();
+        assert!(file.patch.contains("+new"));
+        assert!(file.patch.contains("-old"));
+    }
+
+    #[test]
+    fn staged_diff_on_empty_repo() {
+        let (dir, repo) = make_repo();
+        // No commits yet — repo is empty
+        std::fs::write(dir.path().join("first.txt"), "hello\n").unwrap();
+        let mut index = repo.index().unwrap();
+        index.add_path(std::path::Path::new("first.txt")).unwrap();
+        index.write().unwrap();
+        let ctx = make_repo_context(repo, dir.path());
+        let diff = staged_diff(&ctx).unwrap();
+        assert!(diff.files.iter().any(|f| f.path == "first.txt"));
+        assert!(diff.total_additions >= 1);
+    }
+}
+
 pub fn diff_vs_base(ctx: &RepoContext, base_branch: &str) -> Result<DiffSummary, GitPilotError> {
     let repo = &ctx.repo;
 
