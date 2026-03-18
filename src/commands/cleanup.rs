@@ -1,10 +1,18 @@
 use anyhow::Result;
 use dialoguer::{MultiSelect, Confirm, theme::ColorfulTheme};
+use serde::Serialize;
 use crate::commands::CommandContext;
 use crate::display::{tables, theme};
 use crate::git::branches::{list_branches, BranchState};
 
-pub fn run(ctx: &CommandContext, base: Option<&str>) -> Result<()> {
+#[derive(Serialize)]
+struct CleanupJson {
+    dry_run: bool,
+    deleted: Vec<String>,
+    would_delete: Vec<String>,
+}
+
+pub fn run(ctx: &CommandContext, base: Option<&str>, dry_run: bool) -> Result<()> {
     let base_branch = base
         .unwrap_or(&ctx.config.base_branch)
         .to_string();
@@ -28,13 +36,32 @@ pub fn run(ctx: &CommandContext, base: Option<&str>) -> Result<()> {
         .collect();
 
     if candidates.is_empty() {
-        println!("{}", theme::success("No branches to clean up."));
+        if ctx.json {
+            println!("{}", serde_json::to_string(&CleanupJson { dry_run, deleted: vec![], would_delete: vec![] })?);
+        } else {
+            println!("{}", theme::success("No branches to clean up."));
+        }
         return Ok(());
     }
 
-    println!("{}", theme::heading("Branches eligible for cleanup:"));
-    println!("{}", tables::branch_table(&candidates));
-    println!();
+    if !ctx.json {
+        println!("{}", theme::heading("Branches eligible for cleanup:"));
+        println!("{}", tables::branch_table(&candidates));
+        println!();
+    }
+
+    if dry_run {
+        let names: Vec<String> = candidates.iter().map(|b| b.name.clone()).collect();
+        if ctx.json {
+            println!("{}", serde_json::to_string(&CleanupJson { dry_run: true, deleted: vec![], would_delete: names })?);
+        } else {
+            println!("{}", theme::dim("Dry run — would delete:"));
+            for name in &names {
+                println!("  {}", name);
+            }
+        }
+        return Ok(());
+    }
 
     let labels: Vec<String> = candidates
         .iter()
@@ -47,7 +74,11 @@ pub fn run(ctx: &CommandContext, base: Option<&str>) -> Result<()> {
         .interact()?;
 
     if selections.is_empty() {
-        println!("{}", theme::dim("No branches selected."));
+        if ctx.json {
+            println!("{}", serde_json::to_string(&CleanupJson { dry_run: false, deleted: vec![], would_delete: vec![] })?);
+        } else {
+            println!("{}", theme::dim("No branches selected."));
+        }
         return Ok(());
     }
 
@@ -64,18 +95,40 @@ pub fn run(ctx: &CommandContext, base: Option<&str>) -> Result<()> {
         .interact()?;
 
     if !confirmed {
-        println!("{}", theme::dim("Aborted."));
+        if ctx.json {
+            println!("{}", serde_json::to_string(&CleanupJson { dry_run: false, deleted: vec![], would_delete: vec![] })?);
+        } else {
+            println!("{}", theme::dim("Aborted."));
+        }
         return Ok(());
     }
 
+    let mut deleted = Vec::new();
     for name in selected_names {
         match repo.find_branch(name, git2::BranchType::Local) {
             Ok(mut branch) => match branch.delete() {
-                Ok(_) => println!("{} {}", theme::success("Deleted:"), name),
-                Err(e) => println!("{} {}: {}", theme::error("Failed:"), name, e),
+                Ok(_) => {
+                    if !ctx.json {
+                        println!("{} {}", theme::success("Deleted:"), name);
+                    }
+                    deleted.push(name.to_string());
+                }
+                Err(e) => {
+                    if !ctx.json {
+                        println!("{} {}: {}", theme::error("Failed:"), name, e);
+                    }
+                }
             },
-            Err(e) => println!("{} {}: {}", theme::error("Failed:"), name, e),
+            Err(e) => {
+                if !ctx.json {
+                    println!("{} {}: {}", theme::error("Failed:"), name, e);
+                }
+            }
         }
+    }
+
+    if ctx.json {
+        println!("{}", serde_json::to_string(&CleanupJson { dry_run: false, deleted, would_delete: vec![] })?);
     }
 
     Ok(())

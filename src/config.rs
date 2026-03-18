@@ -2,12 +2,21 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum SyncStrategy {
+    #[default]
+    Rebase,
+    Merge,
+}
+
 #[derive(Serialize, Clone)]
 pub struct Config {
     pub base_branch: String,
     pub protected_branches: Vec<String>,
     pub stale_days: u64,
     pub review_secrets_patterns: Vec<String>,
+    pub sync_strategy: SyncStrategy,
 }
 
 impl Default for Config {
@@ -27,6 +36,7 @@ impl Default for Config {
                 r"ghp_[A-Za-z0-9]+".to_string(),
                 r"password\s*=".to_string(),
             ],
+            sync_strategy: SyncStrategy::default(),
         }
     }
 }
@@ -37,6 +47,7 @@ struct FileConfig {
     protected_branches: Option<Vec<String>>,
     stale_days: Option<u64>,
     review_secrets_patterns: Option<Vec<String>>,
+    sync_strategy: Option<SyncStrategy>,
 }
 
 fn global_config_path() -> Option<PathBuf> {
@@ -60,6 +71,9 @@ fn apply(base: &mut Config, file: FileConfig) {
     }
     if let Some(v) = file.review_secrets_patterns {
         base.review_secrets_patterns = v;
+    }
+    if let Some(v) = file.sync_strategy {
+        base.sync_strategy = v;
     }
 }
 
