@@ -3,6 +3,9 @@ name = "gitpilot"
 version = "0.1.0"
 edition = "2021"
 description = "A Git assistant for daily developer workflow"
+license = "MIT"
+repository = "https://github.com/harshsandhu44/gitpilot"
+homepage = "https://github.com/harshsandhu44/gitpilot"
 
 [[bin]]
 name = "gitpilot"
@@ -18,3 +21,16 @@ tabled = "0.15"
 dialoguer = "0.11"
 chrono = { version = "0.4" }
 regex = "1"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.31.0"
+ci = "github"
+installers = ["homebrew"]
+tap = "harshsandhu44/homebrew-tap"
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+]
+publish-jobs = ["homebrew", "./publish/cargo"]
