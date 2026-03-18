@@ -1,3 +1,17 @@
+## [1.0.0](https://github.com/harshsandhu44/gitpilot/compare/v0.5.0...v1.0.0) (2026-03-18)
+
+### ⚠ BREAKING CHANGES
+
+* rename to git-pilot, add 125 unit tests (#3)
+
+### Features
+
+* rename to git-pilot, add 125 unit tests ([#3](https://github.com/harshsandhu44/gitpilot/issues/3)) ([4bf923a](https://github.com/harshsandhu44/gitpilot/commit/4bf923a092cf9249785745eff884ed72259413ba))
+
+### Bug Fixes
+
+* **release:** use conventionalcommits preset to support feat! breaking change syntax ([af9ffdf](https://github.com/harshsandhu44/gitpilot/commit/af9ffdf01af54210285e1d29106deedd666174eb))
+
 # [0.5.0](https://github.com/harshsandhu44/gitpilot/compare/v0.4.0...v0.5.0) (2026-03-18)
 
 
