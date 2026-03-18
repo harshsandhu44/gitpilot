@@ -14,6 +14,13 @@ Or build from source:
 cargo install --path .
 ```
 
+Once installed, you can also invoke gitpilot as a Git subcommand:
+
+```bash
+git pilot status
+git pilot summary
+```
+
 ## Commands
 
 ### `status`

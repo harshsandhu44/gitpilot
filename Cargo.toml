@@ -11,6 +11,10 @@ homepage = "https://github.com/harshsandhu44/gitpilot"
 name = "gitpilot"
 path = "src/main.rs"
 
+[[bin]]
+name = "git-pilot"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4", features = ["derive", "env"] }
 git2 = "0.19"
