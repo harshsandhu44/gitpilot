@@ -59,12 +59,12 @@ fn install_pre_commit_hook() -> Result<()> {
     }
 
     let hook_path = hook_dir.join("pre-commit");
-    let hook_line = "gitpilot review\n";
+    let hook_line = "git pilot review\n";
 
     if hook_path.exists() {
         let existing = std::fs::read_to_string(&hook_path)?;
-        if existing.contains("gitpilot review") {
-            println!("{}", theme::dim("pre-commit hook already contains gitpilot review — skipping."));
+        if existing.contains("git pilot review") {
+            println!("{}", theme::dim("pre-commit hook already contains git pilot review — skipping."));
             return Ok(());
         }
         let mut content = existing;
