@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/harshsandhu44/gitpilot/compare/v0.4.0...v0.5.0) (2026-03-18)
+
+
+### Features
+
+* add switch, sync, log, undo, stash, init, generate commands with json/no-color/update-checker ([#2](https://github.com/harshsandhu44/gitpilot/issues/2)) ([25d29eb](https://github.com/harshsandhu44/gitpilot/commit/25d29eb76bf1435063cb7ec5afde2192750323eb))
+
 # [0.4.0](https://github.com/harshsandhu44/gitpilot/compare/v0.3.0...v0.4.0) (2026-03-18)
 
 
