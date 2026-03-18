@@ -1,0 +1,20 @@
+[package]
+name = "gitpilot"
+version = "0.1.0"
+edition = "2021"
+description = "A Git assistant for daily developer workflow"
+
+[[bin]]
+name = "gitpilot"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+git2 = "0.19"
+anyhow = "1"
+thiserror = "1"
+owo-colors = "4"
+tabled = "0.15"
+dialoguer = "0.11"
+chrono = { version = "0.4" }
+regex = "1"
