@@ -77,10 +77,10 @@ pub fn run(ctx: &CommandContext, count: usize) -> Result<()> {
     let repo = &ctx.repo.repo;
     let head = repo.head()?.peel_to_commit()?;
     let mut target = head.clone();
-    for i in 0..n {
+    for step in 0..n {
         let parent_count = target.parent_count();
         if parent_count == 0 {
-            return Err(anyhow!("Not enough history: only {} commit{} available.", i, if i == 1 { "" } else { "s" }));
+            return Err(anyhow!("Not enough history: only {} commit{} available.", step, if step == 1 { "" } else { "s" }));
         }
         target = target.parent(0)?;
     }
