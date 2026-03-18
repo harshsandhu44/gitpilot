@@ -14,7 +14,7 @@ use git::RepoContext;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let config = Config::default();
+    let config = Config::load()?;
 
     match &cli.command {
         Commands::Status => {
