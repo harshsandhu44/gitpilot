@@ -7,6 +7,6 @@ use crate::cli::Cli;
 
 pub fn run(shell: Shell) -> Result<()> {
     let mut cmd = Cli::command();
-    generate(shell, &mut cmd, "gitpilot", &mut io::stdout());
+    generate(shell, &mut cmd, "git-pilot", &mut io::stdout());
     Ok(())
 }
