@@ -114,6 +114,7 @@ fn create_and_checkout(repo: &git2::Repository, name: &str) -> Result<()> {
     let remote_ref = format!("refs/remotes/origin/{}", name);
     let obj = repo.revparse_single(&remote_ref)?;
     let commit = obj.peel_to_commit()?;
-    repo.branch(name, &commit, false)?;
+    let mut branch = repo.branch(name, &commit, false)?;
+    branch.set_upstream(Some(&format!("origin/{}", name)))?;
     checkout_local(repo, name)
 }
