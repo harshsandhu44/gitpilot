@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/harshsandhu44/gitpilot/compare/v1.0.0...v1.0.1) (2026-03-18)
+
+### Bug Fixes
+
+* code quality improvements and enhancements ([#4](https://github.com/harshsandhu44/gitpilot/issues/4)) ([e2b74f1](https://github.com/harshsandhu44/gitpilot/commit/e2b74f142c4e470715102ad991e0c38d4a6011e3))
+
 ## [1.0.0](https://github.com/harshsandhu44/gitpilot/compare/v0.5.0...v1.0.0) (2026-03-18)
 
 ### ⚠ BREAKING CHANGES
