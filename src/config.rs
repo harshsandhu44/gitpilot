@@ -18,6 +18,7 @@ pub struct Config {
     pub review_secrets_patterns: Vec<String>,
     pub sync_strategy: SyncStrategy,
     pub log_limit: usize,
+    pub review_diff_threshold: usize,
 }
 
 impl Default for Config {
@@ -39,6 +40,7 @@ impl Default for Config {
             ],
             sync_strategy: SyncStrategy::default(),
             log_limit: 10_000,
+            review_diff_threshold: 500,
         }
     }
 }
@@ -51,6 +53,7 @@ struct FileConfig {
     review_secrets_patterns: Option<Vec<String>>,
     sync_strategy: Option<SyncStrategy>,
     log_limit: Option<usize>,
+    review_diff_threshold: Option<usize>,
 }
 
 fn global_config_path() -> Option<PathBuf> {
@@ -80,6 +83,9 @@ fn apply(base: &mut Config, file: FileConfig) {
     }
     if let Some(v) = file.log_limit {
         base.log_limit = v;
+    }
+    if let Some(v) = file.review_diff_threshold {
+        base.review_diff_threshold = v;
     }
 }
 
@@ -135,6 +141,7 @@ mod tests {
             review_secrets_patterns: None,
             sync_strategy: None,
             log_limit: None,
+            review_diff_threshold: None,
         });
         assert_eq!(c.base_branch, "develop");
     }
@@ -149,6 +156,7 @@ mod tests {
             review_secrets_patterns: None,
             sync_strategy: None,
             log_limit: None,
+            review_diff_threshold: None,
         });
         assert_eq!(c.stale_days, 60);
     }
@@ -163,6 +171,7 @@ mod tests {
             review_secrets_patterns: None,
             sync_strategy: None,
             log_limit: None,
+            review_diff_threshold: None,
         });
         assert_eq!(c.protected_branches, vec!["trunk"]);
     }
@@ -179,6 +188,7 @@ mod tests {
             review_secrets_patterns: None,
             sync_strategy: None,
             log_limit: None,
+            review_diff_threshold: None,
         });
         assert_eq!(c.base_branch, original_base);
         assert_eq!(c.stale_days, original_stale);

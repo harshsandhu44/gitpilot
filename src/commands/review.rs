@@ -32,7 +32,7 @@ pub fn run(ctx: &CommandContext) -> Result<i32> {
     let mut has_error = false;
 
     // Large diff warning
-    if total_lines > 500 {
+    if total_lines > ctx.config.review_diff_threshold {
         findings.push(FindingRow {
             severity: theme::warning("warning"),
             category: "Large diff".to_string(),
