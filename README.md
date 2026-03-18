@@ -1,6 +1,6 @@
 # gitpilot
 
-A Rust CLI that handles the tedious parts of daily Git workflow: quick repo inspection, PR summaries, pre-commit risk detection, and safe branch cleanup.
+A Rust CLI that handles the tedious parts of daily Git workflow: quick repo inspection, PR summaries, pre-commit risk detection, branch cleanup, and more.
 
 ## Install
 
@@ -20,6 +20,13 @@ Once installed, you can also invoke gitpilot as a Git subcommand:
 git pilot status
 git pilot summary
 ```
+
+## Global flags
+
+| Flag | Env var | Description |
+|------|---------|-------------|
+| `--json` | — | Emit structured JSON output |
+| `--no-color` | `NO_COLOR` | Disable color output |
 
 ## Commands
 
@@ -64,13 +71,6 @@ Detects:
 | Debug artifacts | `println!`, `dbg!`, `console.log` |
 | Markers | `TODO`, `FIXME`, `HACK`, `XXX` |
 
-**Use as a pre-commit hook:**
-
-```bash
-echo 'gitpilot review' >> .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
 ### `cleanup`
 
 Lists branches that are merged, gone (remote deleted), or stale (no commits in 30+ days), then lets you interactively pick which ones to delete.
@@ -78,77 +78,114 @@ Lists branches that are merged, gone (remote deleted), or stale (no commits in 3
 ```
 gitpilot cleanup
 gitpilot cleanup --base develop
+gitpilot cleanup --dry-run
 ```
 
-Protected branches (`main`, `master`, `develop`) and the current branch are always skipped.
+- `--dry-run` — preview what would be deleted without deleting anything
+- Protected branches (`main`, `master`, `develop`) and the current branch are always skipped
 
-## Default config
+### `switch`
 
-| Setting | Default |
-|---------|---------|
-| Base branch | `main` |
-| Protected branches | `main`, `master`, `develop` |
-| Stale threshold | 30 days |
+Fuzzy, interactive branch switcher. Checks out the selected branch; creates a local tracking branch if `--remote` is used and the branch only exists on origin.
 
-## Roadmap
+```
+gitpilot switch
+gitpilot switch --remote
+```
 
-Items are roughly ordered by priority. Each one moves the tool closer to a polished, production-grade CLI.
+### `sync`
 
-### Configuration file
+Fetches origin and rebases (or merges) the current branch onto the base branch.
 
-Load settings from `~/.config/gitpilot/config.toml` and a per-repo `.gitpilot.toml`, falling back to hardcoded defaults. Lets users persist base branch, protected branches, stale threshold, and custom review patterns without passing flags every time.
+```
+gitpilot sync
+gitpilot sync --base develop
+```
 
-### Shell completions
+The strategy is controlled by `sync_strategy` in your config (default: `rebase`).
 
-Generate and install completion scripts for bash, zsh, and fish via a `gitpilot completions <shell>` subcommand (clap's `generate` feature). Required for any CLI that people actually enjoy using.
+### `log`
 
-### `--json` output flag
+Compact commit history with relative timestamps, author, and ref decorations.
 
-Add a global `--json` flag that emits structured JSON for every command. Enables scripting, CI pipelines, and editor integrations without screen-scraping.
+```
+gitpilot log
+gitpilot log --count 50
+gitpilot log --author alice
+gitpilot log --since 7d
+gitpilot log --grep feat
+```
 
-### `switch` command
+`--since` accepts `YYYY-MM-DD`, `Nd` (days), `Nw` (weeks), or `Nm` (months).
 
-Fuzzy, interactive branch switcher. Lists local (and optionally remote) branches through dialoguer's fuzzy-select, then checks out the selection. Replaces the `git branch | fzf | xargs git checkout` muscle memory.
+### `undo`
 
-### `undo` command
+Interactively undo the last N commits with a choice of soft, mixed, or hard reset. Shows the affected commits before confirming a hard reset.
 
-Interactive "undo last N commits" with a choice of soft, mixed, or hard reset. Safer than remembering reset flags; shows the commits that will be affected before confirming.
+```
+gitpilot undo
+gitpilot undo --count 10
+```
 
-### `stash` command
+### `stash`
 
-Interactive stash manager: list stashes with their messages and age, then pick one to apply, pop, or drop. Fills the gap left by the terse `git stash list` output.
+Interactive stash manager: lists stashes, then lets you apply, pop, or drop the selected entry.
 
-### `sync` command
+```
+gitpilot stash
+```
 
-One-shot "get current branch up to date": fetch origin, rebase (or merge) from the upstream base branch, and report the result. Useful at the start of every work session.
+### `init`
 
-### `init` command
+Scaffolds a `.gitpilot.toml` in the current repo with commented-out defaults. Pass `--hook` to also install `gitpilot review` as a pre-commit hook.
 
-Scaffold a `.gitpilot.toml` in the repo with commented-out defaults, and optionally install `gitpilot review` as a pre-commit hook. Reduces the setup friction for new users and new repos.
+```
+gitpilot init
+gitpilot init --hook
+```
 
-### `--dry-run` for destructive commands
+### `generate`
 
-Add a `--dry-run` flag to `cleanup` (and future destructive commands) that prints what would be deleted without doing it. Useful for CI checks and cautious users.
+Generate shell completion scripts or a man page.
 
-### CI-mode output
+```
+gitpilot generate completions bash
+gitpilot generate completions zsh
+gitpilot generate completions fish
+gitpilot generate man
+gitpilot generate man --output gitpilot.1
+```
 
-Auto-detect CI environments (`CI`, `GITHUB_ACTIONS`, `BUILDKITE`, etc.) and switch to plain, non-interactive, non-colored output with machine-friendly exit codes. `review` already exits `1` on findings; make the behavior consistent across all commands.
+Shorthand for completions:
 
-### `log` command
+```
+gitpilot completions zsh
+```
 
-A compact, opinionated `git log` view: one-line commits with relative timestamps, author, and a branch/tag graph column. Filters by `--author`, `--since`, and `--grep` without remembering log format strings.
+**Use as a pre-commit hook (manual):**
 
-### `NO_COLOR` and `--no-color` support
+```bash
+echo 'gitpilot review' >> .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
 
-Respect the `NO_COLOR` env var (per no-color.org) and a global `--no-color` flag. owo-colors supports this; it just needs to be wired to the env check on startup.
+Or use `gitpilot init --hook` to do this automatically.
 
-### Man page generation
+## Configuration
 
-Produce a `gitpilot.1` man page via `clap_mangen` and distribute it alongside the binary so users can run `man git-pilot`. Expected by package maintainers (Homebrew, AUR, etc.).
+Config is loaded from `~/.config/gitpilot/config.toml` (global) and `.gitpilot.toml` in the repo root (local), with local values taking precedence. Run `gitpilot init` to scaffold a local config.
 
-### Update checker
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `base_branch` | `"main"` | Branch used for comparisons in `summary`, `cleanup`, `sync` |
+| `protected_branches` | `["main", "master", "develop"]` | Never deleted by `cleanup` |
+| `stale_days` | `30` | Branches with no commits newer than this are flagged as stale |
+| `review_secrets_patterns` | See defaults | Regex patterns checked by `review` |
+| `sync_strategy` | `"rebase"` | `"rebase"` or `"merge"` |
 
-On startup (async, with a timeout), check the latest version on crates.io or GitHub releases and print a one-line notice if a newer version is available. Opt-out via config or `GITPILOT_NO_UPDATE_CHECK`.
+## Update checker
+
+On startup, gitpilot checks crates.io for a newer version and prints a notice if one is available. Set `GITPILOT_NO_UPDATE_CHECK=1` to disable.
 
 ## License
 
