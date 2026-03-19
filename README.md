@@ -135,6 +135,41 @@ Interactive stash manager: lists stashes, then lets you apply, pop, or drop the 
 git pilot stash
 ```
 
+### `clone`
+
+Clone a repository by URL or `owner/repo` shorthand, then print a post-clone snapshot so you can get to work immediately.
+
+```
+git pilot clone owner/repo
+git pilot clone https://github.com/owner/repo
+git pilot clone git@github.com:owner/repo.git
+git pilot clone owner/repo --into my-dir
+git pilot clone owner/repo --branch develop
+git pilot clone torvalds/linux --depth 1
+git pilot --json clone owner/repo
+```
+
+- `--into <dir>` — clone into a custom directory name (default: inferred from repo)
+- `--branch <name>` / `-b <name>` — check out a specific branch after clone
+- `--depth <n>` / `-d <n>` — create a shallow clone with the given commit depth
+
+**Example output:**
+
+```
+Cloned owner/repo into ./repo
+
+Repo snapshot
+- default branch: main
+- remotes: origin
+- likely stack: Rust
+- key files: Cargo.toml, README.md, .github/workflows
+- suggested next commands:
+  cd repo
+  git pilot summary
+  git pilot log --count 15
+  git pilot init --hook
+```
+
 ### `init`
 
 Scaffolds a `.gitpilot.toml` in the current repo with commented-out defaults. Pass `--hook` to also install `git pilot review` as a pre-commit hook.
