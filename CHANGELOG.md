@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/harshsandhu44/gitpilot/compare/v1.0.1...v1.1.0) (2026-03-19)
+
+### Features
+
+* **clone:** add git pilot clone command ([#14](https://github.com/harshsandhu44/gitpilot/issues/14)) ([7e3637d](https://github.com/harshsandhu44/gitpilot/commit/7e3637d97128fe7cf68213f2381f2ed800c9a823))
+
 ## [1.0.1](https://github.com/harshsandhu44/gitpilot/compare/v1.0.0...v1.0.1) (2026-03-18)
 
 ### Bug Fixes
