@@ -90,6 +90,20 @@ pub enum Commands {
         #[arg(value_enum)]
         shell: Shell,
     },
+    /// Clone a repository with post-clone insights
+    Clone {
+        /// Repository to clone (HTTPS URL, SSH URL, or owner/repo)
+        repo: String,
+        /// Target directory name
+        #[arg(long)]
+        into: Option<String>,
+        /// Branch to checkout after clone
+        #[arg(long, short)]
+        branch: Option<String>,
+        /// Shallow clone with given commit depth
+        #[arg(long, short)]
+        depth: Option<u32>,
+    },
 }
 
 #[cfg(test)]
@@ -270,6 +284,46 @@ mod tests {
             cli.command,
             Commands::Generate { target: GenerateTarget::Man { output: None } }
         ));
+    }
+
+    #[test]
+    fn parse_clone_shorthand() {
+        let cli = Cli::try_parse_from(["git-pilot", "clone", "owner/repo"]).unwrap();
+        assert!(matches!(cli.command, Commands::Clone { ref repo, into: None, branch: None, depth: None } if repo == "owner/repo"));
+    }
+
+    #[test]
+    fn parse_clone_with_into() {
+        let cli = Cli::try_parse_from(["git-pilot", "clone", "owner/repo", "--into", "mydir"]).unwrap();
+        assert!(matches!(cli.command, Commands::Clone { ref into, .. } if into.as_deref() == Some("mydir")));
+    }
+
+    #[test]
+    fn parse_clone_with_branch() {
+        let cli = Cli::try_parse_from(["git-pilot", "clone", "owner/repo", "--branch", "dev"]).unwrap();
+        assert!(matches!(cli.command, Commands::Clone { ref branch, .. } if branch.as_deref() == Some("dev")));
+    }
+
+    #[test]
+    fn parse_clone_with_depth() {
+        let cli = Cli::try_parse_from(["git-pilot", "clone", "owner/repo", "--depth", "1"]).unwrap();
+        assert!(matches!(cli.command, Commands::Clone { depth: Some(1), .. }));
+    }
+
+    #[test]
+    fn parse_clone_all_flags() {
+        let cli = Cli::try_parse_from([
+            "git-pilot", "clone", "https://github.com/owner/repo",
+            "--into", "mydir", "--branch", "main", "--depth", "5",
+        ]).unwrap();
+        if let Commands::Clone { repo, into, branch, depth } = cli.command {
+            assert_eq!(repo, "https://github.com/owner/repo");
+            assert_eq!(into.as_deref(), Some("mydir"));
+            assert_eq!(branch.as_deref(), Some("main"));
+            assert_eq!(depth, Some(5));
+        } else {
+            panic!("expected Clone");
+        }
     }
 }
 

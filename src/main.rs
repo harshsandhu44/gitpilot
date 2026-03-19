@@ -57,6 +57,18 @@ fn main() -> Result<()> {
             let config = Config::default();
             return commands::init::run(&config, *hook);
         }
+        Commands::Clone { repo, into, branch, depth } => {
+            let config = Config::load().unwrap_or_default();
+            return commands::clone::run(
+                &config,
+                repo,
+                into.as_deref(),
+                branch.as_deref(),
+                *depth,
+                cli.json,
+                cli.no_color,
+            );
+        }
         _ => {}
     }
 
@@ -133,7 +145,10 @@ fn run_command(cli: &Cli, config: Config) -> Result<()> {
             let mut ctx = CommandContext { repo, config, json: cli.json, no_color: cli.no_color };
             commands::stash::run(&mut ctx)?;
         }
-        Commands::Completions { .. } | Commands::Generate { .. } | Commands::Init { .. } => {
+        Commands::Completions { .. }
+        | Commands::Generate { .. }
+        | Commands::Init { .. }
+        | Commands::Clone { .. } => {
             unreachable!()
         }
     }
